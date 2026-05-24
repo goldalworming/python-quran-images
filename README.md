@@ -2,16 +2,19 @@
 
 A two-part project:
 
-1. **Image generator** (Python) — renders every page of the Quran as a
-   PNG using the official **KFGQPC v2** (1421H Madani Mushaf, 604 pages)
-   font set. PNGs can then be converted to AVIF for compact delivery.
-2. **Mobile web reader** (vanilla HTML/JS) — a single-page app that
-   serves the rendered pages with RTL swipe navigation, page resume,
-   and a **memorisation-marks** layer so you can tap to flag spots in
-   your hifz where you tend to make mistakes (with several colors, an
-   erase mode, and per-page clearing).
+**1. Image generator** (Python) — renders every page of the Quran as a
+PNG using the official **KFGQPC v2** (1421H Madani Mushaf, 604 pages)
+font set. PNGs can then be converted to AVIF for compact delivery.
 
 ![Sample rendered page](screenshot.png)
+
+**2. Mobile web reader** (vanilla HTML/JS) — a single-page app that
+serves the rendered pages with RTL swipe navigation, page resume, and a
+**memorisation-marks** layer so you can tap to flag spots in your hifz
+where you tend to make mistakes (with several colors, an erase mode,
+and per-page clearing).
+
+![Mobile web reader](webapp.png)
 
 Inspired by and originally adapted from
 [`quran/quran.com-images`](https://github.com/quran/quran.com-images) —

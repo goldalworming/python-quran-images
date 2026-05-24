@@ -7,6 +7,7 @@ quran_v2.db
 output/
 output-avif/
 !screenshot.png
+!webapp.png
 
 # --- Raw downloads / reference material (not used by the active pipeline) ---
 source/
