@@ -1,0 +1,319 @@
+:root {
+  --bg: #FDFCF8;
+  --fg: #111;
+  --muted: #5a6b62;
+  --green: #25634B;
+  --green-bg: #F0FDF4;
+  --green-line: #C9E0D2;
+  --shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  overscroll-behavior: none;
+}
+
+/* ---- View routing (single-page app) ---- */
+body.route-list .view-page { display: none; }
+body.route-page .view-list { display: none; }
+.view-page { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+
+a { color: inherit; text-decoration: none; }
+
+/* ---- Header ---- */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--green-line);
+}
+.header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--green);
+}
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--green);
+  font-size: 22px;
+  margin-right: 8px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.search-wrap {
+  margin-top: 10px;
+}
+.search-wrap input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--green-line);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 15px;
+  color: var(--fg);
+  outline: none;
+}
+.search-wrap input:focus {
+  border-color: var(--green);
+}
+
+/* ---- Surah list ---- */
+.surah-list {
+  padding: 6px 8px 24px;
+  margin: 0;
+  list-style: none;
+}
+.surah-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--green-line);
+  cursor: pointer;
+  transition: background 80ms ease-out;
+  background: var(--bg);
+}
+.surah-row:active {
+  background: var(--green-bg);
+}
+.surah-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--green-bg);
+  color: var(--green);
+  font-weight: 600;
+  font-size: 14px;
+  margin-right: 12px;
+}
+.surah-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.surah-info .name {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--fg);
+}
+.surah-info .meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.surah-arabic {
+  font-family: "Amiri", "Noto Naskh Arabic", "Scheherazade New", serif;
+  font-size: 22px;
+  color: var(--green);
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.no-results {
+  text-align: center;
+  color: var(--muted);
+  padding: 30px 12px;
+}
+
+/* ---- Page viewer ---- */
+.viewer-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+.viewer-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--green-line);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.viewer-header .title {
+  flex: 1 1 auto;
+  font-weight: 600;
+  color: var(--green);
+  font-size: 17px;
+  text-align: center;
+}
+.menu-btn {
+  background: none;
+  border: none;
+  color: var(--green);
+  font-size: 26px;
+  line-height: 1;
+  padding: 0 6px;
+  cursor: pointer;
+}
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 8px;
+  background: #fff;
+  border: 1px solid var(--green-line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  min-width: 200px;
+  padding: 6px 0;
+  z-index: 20;
+}
+.menu-dropdown[hidden] { display: none; }
+.menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--fg);
+  cursor: pointer;
+}
+.menu-item:hover, .menu-item:active { background: var(--green-bg); }
+.menu-item.danger { color: #B91C1C; }
+.menu-section {
+  padding: 8px 14px 6px;
+  border-top: 1px solid var(--green-line);
+  border-bottom: 1px solid var(--green-line);
+  margin: 4px 0;
+  opacity: 0.4;
+  transition: opacity 150ms ease-out;
+}
+.mark-mode .menu-section { opacity: 1; }
+.menu-item.danger {
+  opacity: 0.4;
+  transition: opacity 150ms ease-out;
+}
+.erase-mode .menu-item.danger { opacity: 1; }
+.menu-section-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.color-row {
+  display: flex;
+  gap: 8px;
+}
+.color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.color-swatch.selected {
+  border-color: var(--fg);
+}
+
+.hide-marks .marks-layer { display: none; }
+
+/* ---- Mark / Erase mode UI cues ---- */
+.mark-mode  .menu-btn { color: var(--green); }
+.erase-mode .menu-btn { color: #B91C1C; }
+.erase-mode .mark {
+  width: 26px;
+  height: 26px;
+  outline: 2px solid #B91C1C;
+  outline-offset: -2px;
+}
+.mode-banner {
+  display: none;
+  color: #fff;
+  text-align: center;
+  font-size: 13px;
+  padding: 4px 10px;
+}
+.mark-banner  { background: var(--green); }
+.erase-banner { background: #B91C1C; }
+.mark-mode  .mark-banner  { display: block; }
+.erase-mode .erase-banner { display: block; }
+.viewer-header .nav-btn {
+  background: none;
+  border: 1px solid var(--green-line);
+  color: var(--green);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.viewer-header .nav-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.page-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.strip {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  width: 300%;
+  transform: translate3d(-33.3333%, 0, 0);
+  will-change: transform;
+}
+.slide {
+  width: 33.3333%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 8px 8px;
+  box-sizing: border-box;
+}
+.page-frame {
+  position: relative;
+  aspect-ratio: 1024 / 1656;
+  max-width: 100%;
+  max-height: 100%;
+}
+.slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  -webkit-user-drag: none;
+}
+.marks-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.mark {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  pointer-events: none;
+  /* background is set inline as "#RRGGBB" + "33" (≈20% alpha) */
+}

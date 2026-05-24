@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#FDFCF8" />
+  <title>Quran</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="img/logo-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Quran" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <script>
+    // Fresh launch -> jump straight to the last page. Subsequent visits to
+    // the root URL within the same tab session show the surah list, so the
+    // user can always get back to it.
+    (function () {
+      try {
+        if (!location.hash && !sessionStorage.getItem("quran:resumed")) {
+          sessionStorage.setItem("quran:resumed", "1");
+          var lp = localStorage.getItem("quran:lastPage");
+          if (lp && /^\d+$/.test(lp)) {
+            location.replace(location.pathname + "#/page/" + lp);
+          }
+        }
+      } catch (_) { /* ignore storage errors */ }
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="route-list">
+  <!-- ===== Surah list view ===== -->
+  <section id="view-list" class="view view-list">
+    <header class="header">
+      <h1>Quran</h1>
+      <div class="search-wrap">
+        <input id="search" type="search" placeholder="Search surah..." autocomplete="off" />
+      </div>
+    </header>
+    <ul id="list" class="surah-list" aria-live="polite"></ul>
+  </section>
+
+  <!-- ===== Page viewer ===== -->
+  <section id="view-page" class="view view-page">
+    <div class="viewer-wrap">
+      <div class="viewer-header">
+        <button class="back-btn" id="back-btn" aria-label="Back">‹</button>
+        <div class="title" id="title">Page</div>
+        <button class="menu-btn" id="menu-btn" aria-label="Menu">⋮</button>
+        <div class="menu-dropdown" id="menu-dropdown" hidden>
+          <button class="menu-item" data-action="toggle-layer">
+            <span id="toggle-layer-label">Hide marks</span>
+          </button>
+          <button class="menu-item" data-action="toggle-mark">
+            <span id="toggle-mark-label">Mark mode</span>
+          </button>
+          <button class="menu-item" data-action="toggle-erase">
+            <span id="toggle-erase-label">Erase mode</span>
+          </button>
+          <div class="menu-section">
+            <div class="menu-section-label">Mark color</div>
+            <div class="color-row" id="color-row">
+              <span class="color-swatch" data-color="#25634B" style="background:#25634B"></span>
+              <span class="color-swatch" data-color="#DC2626" style="background:#DC2626"></span>
+              <span class="color-swatch" data-color="#2563EB" style="background:#2563EB"></span>
+              <span class="color-swatch" data-color="#F59E0B" style="background:#F59E0B"></span>
+              <span class="color-swatch" data-color="#7C3AED" style="background:#7C3AED"></span>
+            </div>
+          </div>
+          <button class="menu-item danger" data-action="clear-all">Clear marks on this page…</button>
+        </div>
+      </div>
+      <div class="mode-banner mark-banner">Mark mode — tap a spot to add or remove a mark</div>
+      <div class="mode-banner erase-banner">Erase mode — tap a mark to delete it</div>
+      <div class="page-area" id="page-area">
+        <div class="strip" id="strip">
+          <div class="slide">
+            <div class="page-frame" id="frame-next">
+              <img id="img-next" alt="" draggable="false" />
+              <div class="marks-layer" id="marks-next"></div>
+            </div>
+          </div>
+          <div class="slide">
+            <div class="page-frame" id="frame-curr">
+              <img id="img-curr" alt="" draggable="false" />
+              <div class="marks-layer" id="marks-curr"></div>
+            </div>
+          </div>
+          <div class="slide">
+            <div class="page-frame" id="frame-prev">
+              <img id="img-prev" alt="" draggable="false" />
+              <div class="marks-layer" id="marks-prev"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="surahs.js?v=5"></script>
+  <script src="viewer.js?v=5"></script>
+  <script src="app.js?v=5"></script>
+</body>
+</html>

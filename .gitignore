@@ -1,0 +1,38 @@
+# --- Big binary assets (download via setup.bat) ---
+res/fonts/*.ttf
+res/fonts/*.otf
+
+# --- Generated artifacts (regenerate with the pipeline) ---
+quran_v2.db
+output/
+output-avif/
+!screenshot.png
+
+# --- Raw downloads / reference material (not used by the active pipeline) ---
+source/
+config/
+qpc-v2-15-lines.db.zip
+qpc-v2.db.zip
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# --- Editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Webapp local overrides ---
+webapp/output-avif
+webapp/output
+
+# --- Memory / scratch files ---
+*.log
+*.tmp
+*.bak
