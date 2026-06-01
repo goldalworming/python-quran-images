@@ -407,7 +407,7 @@
     localStorage.setItem(LAST_PAGE_BY_SURAH_KEY, JSON.stringify(map));
   }
   function saveLastPageForBookmarkedSurah() {
-    const s = surahForPage(page);
+    const s = activeReadingSurah();
     if (!s) return;
     const bookmarks = readBookmarks();
     if (!bookmarks.includes(s[0])) return;
@@ -424,6 +424,53 @@
       if (start <= p && (best === null || start > best[5])) best = s;
     }
     return best;
+  }
+
+  // -------- Active reading surah --------
+  // Tracks which surah the user is currently "reading", separate from
+  // surahForPage(page). Persists across swipes through the surah and one
+  // page past its end (so a page that visually starts the next surah
+  // still counts as continued reading of the entry surah). Reset when
+  // the user returns to the surah list or explicitly enters another
+  // surah from the list / bookmark dropdown.
+  const ACTIVE_SURAH_KEY = "quran:activeSurah";
+  function readActiveSurahNum() {
+    try {
+      const v = sessionStorage.getItem(ACTIVE_SURAH_KEY);
+      const n = parseInt(v, 10);
+      return Number.isFinite(n) ? n : null;
+    } catch (_) { return null; }
+  }
+  function writeActiveSurahNum(num) {
+    try {
+      if (num == null) sessionStorage.removeItem(ACTIVE_SURAH_KEY);
+      else sessionStorage.setItem(ACTIVE_SURAH_KEY, String(num));
+    } catch (_) {}
+  }
+  function surahEndPage(s) {
+    const startPage = s[5];
+    let nextStart = 605;
+    for (const o of SURAHS) {
+      if (o[5] > startPage && o[5] < nextStart) nextStart = o[5];
+    }
+    return nextStart - 1;
+  }
+  // Returns the surah we should attribute the current page's reading
+  // progress to. Auto-switches to the page's actual surah when the user
+  // strays more than one page past the active surah's end.
+  function activeReadingSurah() {
+    const num = readActiveSurahNum();
+    if (num !== null) {
+      const s = SURAHS.find((x) => x[0] === num);
+      if (s) {
+        const startPage = s[5];
+        const cap = surahEndPage(s) + 1;
+        if (page >= startPage && page <= cap) return s;
+      }
+    }
+    const fallback = surahForPage(page);
+    if (fallback) writeActiveSurahNum(fallback[0]);
+    return fallback;
   }
 
   function renderBookmarkJump() {
@@ -450,6 +497,7 @@
       const btn = document.createElement("button");
       btn.className = "bookmark-jump-item" + (num === currentNum ? " current" : "");
       btn.dataset.page = String(resumePage);
+      btn.dataset.num = String(num);
       btn.innerHTML = `
         <span class="bj-num">${num}</span>
         <span class="bj-name">${name}</span>
@@ -477,8 +525,10 @@
     const item = e.target.closest(".bookmark-jump-item");
     if (!item) return;
     const target = parseInt(item.dataset.page, 10);
+    const num = parseInt(item.dataset.num, 10);
     closeBookmarkJump();
     if (!Number.isFinite(target)) return;
+    if (Number.isFinite(num)) writeActiveSurahNum(num);
     page = clamp(target);
     refresh();
     setHashForPage(page);
@@ -519,12 +569,16 @@
       page = clamp(p);
       refresh();
     },
+    setActiveSurah(num) {
+      if (Number.isFinite(num)) writeActiveSurahNum(num);
+    },
     activate() {
       active = true;
       requestWakeLock();
     },
     deactivate() {
       active = false;
+      writeActiveSurahNum(null);
       releaseWakeLock();
       // Reset transient modes when leaving the viewer.
       document.body.classList.remove("mark-mode", "erase-mode");

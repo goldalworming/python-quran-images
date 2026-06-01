@@ -90,6 +90,9 @@
       `;
       li.addEventListener("click", (e) => {
         if (e.target.closest(".bookmark-btn")) return;
+        if (window.Viewer && window.Viewer.setActiveSurah) {
+          window.Viewer.setActiveSurah(num);
+        }
         location.hash = "#/page/" + target;
       });
       listEl.appendChild(li);
