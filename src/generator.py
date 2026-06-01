@@ -25,6 +25,14 @@ FONT_DEFAULT = os.path.join(FONT_DIR, "QCF2BSML.ttf")
 # Verified empirically: U+FC20 has width 16384, by far the widest = full-line ornament box.
 ORNAMENT_HEADER_BOX = 0xFC20
 
+# Per-page downward nudge (in pixels) for the surah-header ornament.
+# A few pages place the ornament right under the previous line and the
+# default vertical position causes a 1–2px collision — listed pages get
+# bumped down by the given amount. Anything not listed stays at 0.
+SURA_ORNAMENT_NUDGE = {
+    564: 8,
+}
+
 BLACK = (0, 0, 0, 255)
 SURA_GREEN = (37, 99, 75, 255)
 SURA_GREEN_BG = (240, 253, 244, 255)  # tailwind green-50
@@ -153,7 +161,7 @@ class PageGeneratorV2:
             if line["type"] == "sura":
                 orn_center_y, orn_bottom_y = self._render_ornament(
                     draw, page_width, coord_y, ptsize, margin_top, char_up,
-                    line.get("surah_number"),
+                    line.get("surah_number"), page_number,
                 )
 
             # Render glyphs.
@@ -432,7 +440,7 @@ class PageGeneratorV2:
                 image.paste(cropped_patch, paste_pos, mask=cropped_mask)
 
     def _render_ornament(self, draw, page_width, coord_y, ptsize, margin_top,
-                          char_up, surah_number=None):
+                          char_up, surah_number=None, page_number=None):
         """
         Draw the ornament box (and, if available, the sura-name glyph inside it).
         Returns (ornament_center_y, ornament_bottom_y) so the caller can both
@@ -443,7 +451,8 @@ class PageGeneratorV2:
         orn_min_x, orn_max_x, orn_top, orn_bottom = _glyph_bbox(orn_font, ORNAMENT_HEADER_BOX)
         if orn_max_x == 0:
             return (None, None)
-        desired_orn_top = max(float(margin_top), coord_y - char_up)
+        nudge = SURA_ORNAMENT_NUDGE.get(page_number, 0)
+        desired_orn_top = max(float(margin_top), coord_y - char_up) + nudge
         orn_coord_y = desired_orn_top - orn_top   # baseline-y
         orn_coord_x = (page_width - orn_max_x) / 2.0
         # Light-green fill behind the central rectangle of the ornament,
