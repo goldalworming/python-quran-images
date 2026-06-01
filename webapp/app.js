@@ -29,8 +29,14 @@
       const m = getLastPageBySurah();
       delete m[String(num)];
       localStorage.setItem(LAST_PAGE_BY_SURAH_KEY, JSON.stringify(m));
+      if (window.Viewer && window.Viewer.evictSurahPages) {
+        window.Viewer.evictSurahPages(num);
+      }
     } else {
       set.add(num);
+      if (window.Viewer && window.Viewer.precacheSurahPages) {
+        window.Viewer.precacheSurahPages(num);
+      }
     }
     setBookmarks(set);
   }

@@ -17,8 +17,12 @@
 // Page AVIF images bypass the SW so the browser's HTTP cache handles
 // them (there are 604 of them; we don't want to fill the runtime cache).
 
-const SW_VERSION = "012";
+const SW_VERSION = "013";
 const CACHE_NAME = "quran-runtime-" + SW_VERSION;
+// Persistent cache for page AVIFs explicitly precached by the page when
+// a surah is bookmarked. Survives SW version bumps so users don't lose
+// offline pages whenever the shell is updated.
+const PAGES_CACHE = "quran-pages-v1";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -34,7 +38,9 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+        keys
+          .filter((k) => k !== CACHE_NAME && k !== PAGES_CACHE)
+          .map((k) => caches.delete(k))
       )
     ).then(() => self.clients.claim())
   );
@@ -46,7 +52,17 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.endsWith(".avif")) return; // let network handle page images
+
+  // Page AVIFs: cache-first. The runtime cache is populated explicitly
+  // by the page (precacheSurahPages) when a surah is bookmarked, so
+  // bookmarked surahs work offline while non-bookmarked pages still go
+  // straight to network without bloating the cache.
+  if (url.pathname.endsWith(".avif")) {
+    event.respondWith(
+      caches.match(req).then((cached) => cached || fetch(req))
+    );
+    return;
+  }
 
   // Bypass the HTTP cache and revalidate with the server every time.
   // Server can still 304 if nothing changed, but stale shell files (which

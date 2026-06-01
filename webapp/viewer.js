@@ -379,10 +379,12 @@
       const m = readLastPageBySurah();
       delete m[String(s[0])];
       writeLastPageBySurah(m);
+      evictSurahPages(s[0]);
     } else {
       arr.push(s[0]);
       writeBookmarks(arr);
       saveLastPageForBookmarkedSurah();
+      precacheSurahPages(s[0]);
     }
   }
   function updateBookmarkLabel() {
@@ -454,6 +456,49 @@
       if (o[5] > startPage && o[5] < nextStart) nextStart = o[5];
     }
     return nextStart - 1;
+  }
+
+  // Persistent cache for AVIFs of bookmarked surahs (offline reading).
+  const PAGES_CACHE_NAME = "quran-pages-v1";
+  const PRECACHE_CONCURRENCY = 4;
+  async function precacheSurahPages(num) {
+    if (!("caches" in window)) return;
+    const s = SURAHS.find((x) => x[0] === num);
+    if (!s) return;
+    const startPage = s[5];
+    const endPage = surahEndPage(s);
+    try {
+      const cache = await caches.open(PAGES_CACHE_NAME);
+      const queue = [];
+      for (let p = startPage; p <= endPage; p++) queue.push(p);
+      async function worker() {
+        while (queue.length) {
+          const p = queue.shift();
+          const url = avifUrl(p);
+          if (await cache.match(url)) continue;
+          try {
+            const r = await fetch(url, { cache: "no-cache" });
+            if (r && r.ok) await cache.put(url, r.clone());
+          } catch (_) {}
+        }
+      }
+      await Promise.all(
+        Array.from({ length: PRECACHE_CONCURRENCY }, () => worker())
+      );
+    } catch (_) {}
+  }
+  async function evictSurahPages(num) {
+    if (!("caches" in window)) return;
+    const s = SURAHS.find((x) => x[0] === num);
+    if (!s) return;
+    const startPage = s[5];
+    const endPage = surahEndPage(s);
+    try {
+      const cache = await caches.open(PAGES_CACHE_NAME);
+      for (let p = startPage; p <= endPage; p++) {
+        await cache.delete(avifUrl(p));
+      }
+    } catch (_) {}
   }
   // Returns the surah we should attribute the current page's reading
   // progress to. Auto-switches to the page's actual surah when the user
@@ -572,6 +617,8 @@
     setActiveSurah(num) {
       if (Number.isFinite(num)) writeActiveSurahNum(num);
     },
+    precacheSurahPages,
+    evictSurahPages,
     activate() {
       active = true;
       requestWakeLock();
