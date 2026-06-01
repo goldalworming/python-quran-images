@@ -24,9 +24,15 @@
   }
   function toggleBookmark(num) {
     const set = getBookmarks();
-    if (set.has(num)) set.delete(num); else set.add(num);
+    if (set.has(num)) {
+      set.delete(num);
+      const m = getLastPageBySurah();
+      delete m[String(num)];
+      localStorage.setItem(LAST_PAGE_BY_SURAH_KEY, JSON.stringify(m));
+    } else {
+      set.add(num);
+    }
     setBookmarks(set);
-    return set;
   }
   function getLastPageBySurah() {
     try { return JSON.parse(localStorage.getItem(LAST_PAGE_BY_SURAH_KEY) || "{}"); }
@@ -93,7 +99,7 @@
       const empty = document.createElement("li");
       empty.className = "no-results";
       empty.textContent = activeTab === "bookmarks"
-        ? "No bookmarks yet. Tap the star on a surah to bookmark it."
+        ? "No bookmarks yet. Tap the star on a surah, or use the ⋮ menu inside a surah."
         : "No surah found.";
       listEl.appendChild(empty);
     }

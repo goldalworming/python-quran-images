@@ -109,6 +109,8 @@
     stripEl.style.transform = "translate3d(-33.3333%, 0, 0)";
     localStorage.setItem("quran:lastPage", String(page));
     saveLastPageForBookmarkedSurah();
+    updateBookmarkLabel();
+    updateBookmarkJumpVisibility();
     preload(page - 2);
     preload(page - 1);
     preload(page + 1);
@@ -251,12 +253,13 @@
   areaEl.addEventListener("pointercancel", onCancel);
 
   // -------- Menu --------
-  const menuBtn      = document.getElementById("menu-btn");
-  const menuEl       = document.getElementById("menu-dropdown");
-  const toggleLabel  = document.getElementById("toggle-layer-label");
-  const markLabel    = document.getElementById("toggle-mark-label");
-  const eraseLabel   = document.getElementById("toggle-erase-label");
-  const colorRow     = document.getElementById("color-row");
+  const menuBtn       = document.getElementById("menu-btn");
+  const menuEl        = document.getElementById("menu-dropdown");
+  const toggleLabel   = document.getElementById("toggle-layer-label");
+  const markLabel     = document.getElementById("toggle-mark-label");
+  const eraseLabel    = document.getElementById("toggle-erase-label");
+  const bookmarkLabel = document.getElementById("toggle-bookmark-label");
+  const colorRow      = document.getElementById("color-row");
 
   function openMenu()  { menuEl.hidden = false; }
   function closeMenu() { menuEl.hidden = true;  }
@@ -294,7 +297,11 @@
     const item = e.target.closest("[data-action]");
     if (item) {
       const action = item.dataset.action;
-      if (action === "toggle-layer") {
+      if (action === "toggle-bookmark") {
+        toggleBookmarkForCurrentSurah();
+        updateBookmarkLabel();
+        updateBookmarkJumpVisibility();
+      } else if (action === "toggle-layer") {
         document.body.classList.toggle("hide-marks");
         if (document.body.classList.contains("hide-marks")) {
           document.body.classList.remove("mark-mode", "erase-mode");
@@ -357,6 +364,39 @@
       const arr = JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || "[]");
       return arr.map(Number).filter(Number.isFinite);
     } catch (_) { return []; }
+  }
+  function writeBookmarks(arr) {
+    localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(arr));
+  }
+  function toggleBookmarkForCurrentSurah() {
+    const s = surahForPage(page);
+    if (!s) return;
+    const arr = readBookmarks();
+    const idx = arr.indexOf(s[0]);
+    if (idx >= 0) {
+      arr.splice(idx, 1);
+      writeBookmarks(arr);
+      const m = readLastPageBySurah();
+      delete m[String(s[0])];
+      writeLastPageBySurah(m);
+    } else {
+      arr.push(s[0]);
+      writeBookmarks(arr);
+      saveLastPageForBookmarkedSurah();
+    }
+  }
+  function updateBookmarkLabel() {
+    if (!bookmarkLabel) return;
+    const s = surahForPage(page);
+    if (!s) { bookmarkLabel.textContent = "Bookmark this surah"; return; }
+    const bookmarked = readBookmarks().includes(s[0]);
+    bookmarkLabel.textContent = bookmarked
+      ? `Remove bookmark (${s[1]})`
+      : `Bookmark this surah (${s[1]})`;
+  }
+  function updateBookmarkJumpVisibility() {
+    if (!bjBtn) return;
+    bjBtn.style.display = readBookmarks().length > 0 ? "" : "none";
   }
 
   function readLastPageBySurah() {

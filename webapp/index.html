@@ -16,19 +16,48 @@
     // Fresh launch -> jump straight to the last page. Subsequent visits to
     // the root URL within the same tab session show the surah list, so the
     // user can always get back to it.
+    //
+    // Use history.replaceState (not location.replace) — under iOS PWA
+    // standalone mode, location.replace during head-parse occasionally
+    // produced a blank screen on home-screen launches.
     (function () {
       try {
         if (!location.hash && !sessionStorage.getItem("quran:resumed")) {
           sessionStorage.setItem("quran:resumed", "1");
           var lp = localStorage.getItem("quran:lastPage");
           if (lp && /^\d+$/.test(lp)) {
-            location.replace(location.pathname + "#/page/" + lp);
+            history.replaceState(null, "", location.pathname + "#/page/" + lp);
           }
         }
       } catch (_) { /* ignore storage errors */ }
     })();
+    if ("serviceWorker" in navigator) {
+      // Auto-reload once a new SW takes control. Skip the very first
+      // controller acquisition (null -> SW) so first-launch doesn't loop.
+      var hadController = !!navigator.serviceWorker.controller;
+      var reloading = false;
+      navigator.serviceWorker.addEventListener("controllerchange", function () {
+        if (!hadController) { hadController = true; return; }
+        if (reloading) return;
+        reloading = true;
+        location.reload();
+      });
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").then(function (reg) {
+          // Check for updates whenever the PWA becomes visible. New
+          // versions install + activate immediately (skipWaiting +
+          // clients.claim) which triggers the controllerchange reload
+          // above, so the user always sees the latest build.
+          document.addEventListener("visibilitychange", function () {
+            if (document.visibilityState === "visible") {
+              reg.update().catch(function () {});
+            }
+          });
+        }).catch(function () {});
+      });
+    }
   </script>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=013" />
 </head>
 <body class="route-list">
   <!-- ===== Surah list view ===== -->
@@ -53,7 +82,7 @@
         <button class="back-btn" id="back-btn" aria-label="Back">‹</button>
         <div class="bookmark-jump">
           <button class="bookmark-jump-btn" id="bookmark-jump-btn"
-                  aria-label="Jump to bookmark" aria-haspopup="true" aria-expanded="false">
+                  aria-label="Bookmark" aria-haspopup="true" aria-expanded="false">
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"
                     fill="currentColor" stroke="currentColor"
@@ -66,6 +95,10 @@
         <div class="title" id="title">Page</div>
         <button class="menu-btn" id="menu-btn" aria-label="Menu">⋮</button>
         <div class="menu-dropdown" id="menu-dropdown" hidden>
+          <button class="menu-item" data-action="toggle-bookmark">
+            <span id="toggle-bookmark-label">Bookmark this surah</span>
+          </button>
+          <div class="menu-divider"></div>
           <button class="menu-item" data-action="toggle-layer">
             <span id="toggle-layer-label">Hide marks</span>
           </button>
@@ -115,8 +148,8 @@
     </div>
   </section>
 
-  <script src="surahs.js?v=8"></script>
-  <script src="viewer.js?v=8"></script>
-  <script src="app.js?v=8"></script>
+  <script src="surahs.js?v=013"></script>
+  <script src="viewer.js?v=013"></script>
+  <script src="app.js?v=013"></script>
 </body>
 </html>

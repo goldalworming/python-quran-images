@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reset Quran PWA</title>
+  <style>
+    body { font: 14px -apple-system, Segoe UI, Roboto, sans-serif; padding: 20px;
+           max-width: 640px; margin: auto; color: #111; background: #FDFCF8; }
+    h2   { color: #25634B; margin: 0 0 12px; }
+    pre  { background: #fff; border: 1px solid #C9E0D2; border-radius: 8px;
+           padding: 12px; white-space: pre-wrap; word-break: break-all;
+           font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; }
+    p    { color: #5a6b62; }
+    .ok  { color: #25634B; font-weight: 600; }
+    .err { color: #B91C1C; font-weight: 600; }
+    a    { color: #25634B; }
+  </style>
+</head>
+<body>
+  <h2>Resetting Quran PWA…</h2>
+  <p>
+    Unregisters the service worker and clears its caches so the next launch
+    fetches a fresh copy. Bookmarks and marks (localStorage) are kept by
+    default — append <code>?all=1</code> to the URL to wipe those too.
+  </p>
+  <pre id="log"></pre>
+
+  <script>
+    var log = document.getElementById("log");
+    function add(line, cls) {
+      var span = document.createElement("span");
+      if (cls) span.className = cls;
+      span.textContent = line + "\n";
+      log.appendChild(span);
+    }
+    var nukeStorage = /[?&]all=1\b/.test(location.search);
+
+    (async function () {
+      try {
+        if ("serviceWorker" in navigator) {
+          var regs = await navigator.serviceWorker.getRegistrations();
+          add("Service workers found: " + regs.length);
+          for (var i = 0; i < regs.length; i++) {
+            await regs[i].unregister();
+            add("  - unregistered " + regs[i].scope, "ok");
+          }
+        } else {
+          add("Service workers not supported in this browser");
+        }
+
+        if ("caches" in window) {
+          var keys = await caches.keys();
+          add("Caches found: " + keys.length);
+          for (var j = 0; j < keys.length; j++) {
+            await caches.delete(keys[j]);
+            add("  - deleted " + keys[j], "ok");
+          }
+        }
+
+        if (nukeStorage) {
+          try { localStorage.clear();   add("localStorage cleared", "ok"); } catch (_) {}
+          try { sessionStorage.clear(); add("sessionStorage cleared", "ok"); } catch (_) {}
+        } else {
+          add("(localStorage kept — append ?all=1 to also clear bookmarks/marks)");
+        }
+
+        // Force-refresh the browser HTTP cache for the un-versioned shell
+        // files. Without this, the next PWA launch can still receive stale
+        // index.html / sw.js / manifest from the HTTP cache, even with the
+        // service worker unregistered.
+        add("");
+        add("Refreshing HTTP cache for shell files…");
+        var shell = ["./index.html", "./sw.js", "./manifest.webmanifest"];
+        var results = await Promise.allSettled(
+          shell.map(function (u) { return fetch(u, { cache: "reload" }); })
+        );
+        results.forEach(function (r, idx) {
+          if (r.status === "fulfilled" && r.value && r.value.ok) {
+            add("  - refreshed " + shell[idx] + " (HTTP " + r.value.status + ")", "ok");
+          } else {
+            var reason = r.reason ? (r.reason.message || r.reason) : "HTTP " + (r.value && r.value.status);
+            add("  - failed " + shell[idx] + ": " + reason, "err");
+          }
+        });
+
+        add("");
+        add("Done. Reopening app in 2 seconds…", "ok");
+        setTimeout(function () {
+          location.replace("./?_=" + Date.now());
+        }, 2000);
+      } catch (err) {
+        add("ERROR: " + (err && err.message ? err.message : err), "err");
+      }
+    })();
+  </script>
+</body>
+</html>

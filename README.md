@@ -138,9 +138,19 @@ Open `http://localhost:8765/webapp/` on the same machine, or
 
 Webapp features:
 
-- Surah list with search
+- Surah list with search and an **All / Bookmarks** tab filter
 - RTL swipe navigation between pages (preloads neighbours so swipes feel
   instant), keyboard ← → fallback
+- **Bookmarks with resume-page**: bookmark a surah from two places — the
+  star icon next to each row in the surah list, or the ⋮ menu while
+  reading. Each bookmarked surah remembers the last page you were on, so
+  jumping back resumes where you left off. A small bookmark icon in the
+  viewer header opens a dropdown to switch between bookmarked surahs
+  (only shows when you have at least one). Bookmarks live in
+  `localStorage` (`quran:bookmarks` + `quran:lastPageBySurah`).
+
+  ![Bookmarked surah in the reader](bookmark.jpg)
+
 - **Memorisation marks**: in *Mark mode*, tap a spot on a page to drop a
   semi-transparent dot in your chosen colour (red, green, blue, amber,
   purple). In *Erase mode*, tap near any dot to delete just that one.
@@ -150,8 +160,11 @@ Webapp features:
 - Per-page "Clear marks" with confirmation
 - Resume to last page on fresh launch
 - Wake-lock so the screen doesn't sleep while reading
-- PWA manifest — Add to Home Screen on HTTPS gives an app-like
-  standalone view
+- PWA with offline-capable service worker — Add to Home Screen on HTTPS
+  gives an app-like standalone view, and updates auto-propagate on next
+  launch (no manual cache clearing needed). If a user ever gets stuck
+  on a stale shell, opening `webapp/reset.html` once unregisters the
+  service worker and refreshes the HTTP cache.
 
 The reader expects `output-avif/` to sit next to `index.html` at deploy
 time. If your folder layout differs, set
