@@ -108,6 +108,7 @@
     stripEl.style.transition = "none";
     stripEl.style.transform = "translate3d(-33.3333%, 0, 0)";
     localStorage.setItem("quran:lastPage", String(page));
+    saveLastPageForBookmarkedSurah();
     preload(page - 2);
     preload(page - 1);
     preload(page + 1);
@@ -345,6 +346,110 @@
   updateEraseLabel();
   updateColorSelection();
 
+  // -------- Bookmark jump dropdown --------
+  const BOOKMARKS_KEY = "quran:bookmarks";
+  const LAST_PAGE_BY_SURAH_KEY = "quran:lastPageBySurah";
+  const bjBtn  = document.getElementById("bookmark-jump-btn");
+  const bjMenu = document.getElementById("bookmark-jump-dropdown");
+
+  function readBookmarks() {
+    try {
+      const arr = JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || "[]");
+      return arr.map(Number).filter(Number.isFinite);
+    } catch (_) { return []; }
+  }
+
+  function readLastPageBySurah() {
+    try { return JSON.parse(localStorage.getItem(LAST_PAGE_BY_SURAH_KEY) || "{}"); }
+    catch (_) { return {}; }
+  }
+  function writeLastPageBySurah(map) {
+    localStorage.setItem(LAST_PAGE_BY_SURAH_KEY, JSON.stringify(map));
+  }
+  function saveLastPageForBookmarkedSurah() {
+    const s = surahForPage(page);
+    if (!s) return;
+    const bookmarks = readBookmarks();
+    if (!bookmarks.includes(s[0])) return;
+    const m = readLastPageBySurah();
+    m[String(s[0])] = page;
+    writeLastPageBySurah(m);
+  }
+
+  // Find the surah a given page belongs to (largest startPage <= page).
+  function surahForPage(p) {
+    let best = null;
+    for (const s of SURAHS) {
+      const start = s[5];
+      if (start <= p && (best === null || start > best[5])) best = s;
+    }
+    return best;
+  }
+
+  function renderBookmarkJump() {
+    const nums = readBookmarks();
+    bjMenu.innerHTML = "";
+    if (nums.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "bookmark-jump-empty";
+      empty.textContent = "No bookmarks yet.";
+      bjMenu.appendChild(empty);
+      return;
+    }
+    const currentSurah = surahForPage(page);
+    const currentNum = currentSurah ? currentSurah[0] : -1;
+    const lastPages = readLastPageBySurah();
+    const ordered = nums
+      .map((n) => SURAHS.find((s) => s[0] === n))
+      .filter(Boolean)
+      .sort((a, b) => a[0] - b[0]);
+    for (const s of ordered) {
+      const [num, name, , , , startPage] = s;
+      const resumePage = lastPages[String(num)] || startPage;
+      const isResumed = resumePage !== startPage;
+      const btn = document.createElement("button");
+      btn.className = "bookmark-jump-item" + (num === currentNum ? " current" : "");
+      btn.dataset.page = String(resumePage);
+      btn.innerHTML = `
+        <span class="bj-num">${num}</span>
+        <span class="bj-name">${name}</span>
+        <span class="bj-page">${isResumed ? "↻ p." + resumePage : "p." + startPage}</span>
+      `;
+      bjMenu.appendChild(btn);
+    }
+  }
+
+  function openBookmarkJump() {
+    renderBookmarkJump();
+    bjMenu.hidden = false;
+    bjBtn.setAttribute("aria-expanded", "true");
+  }
+  function closeBookmarkJump() {
+    bjMenu.hidden = true;
+    bjBtn.setAttribute("aria-expanded", "false");
+  }
+
+  bjBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (bjMenu.hidden) openBookmarkJump(); else closeBookmarkJump();
+  });
+  bjMenu.addEventListener("click", (e) => {
+    const item = e.target.closest(".bookmark-jump-item");
+    if (!item) return;
+    const target = parseInt(item.dataset.page, 10);
+    closeBookmarkJump();
+    if (!Number.isFinite(target)) return;
+    page = clamp(target);
+    refresh();
+    setHashForPage(page);
+  });
+  document.addEventListener("click", (e) => {
+    if (!bjMenu.hidden && !bjMenu.contains(e.target) && e.target !== bjBtn
+        && !bjBtn.contains(e.target)) {
+      closeBookmarkJump();
+    }
+  });
+
   // -------- Wake lock --------
   let wakeLock = null;
   async function requestWakeLock() {
@@ -386,6 +491,7 @@
       updateMarkLabel();
       updateEraseLabel();
       closeMenu();
+      closeBookmarkJump();
     },
   };
 })();
